@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>three.js webgl - convex geometry</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	</head>
+	<body>
+		<script src="js/DatGui.js"></script>
+		<script src="js/three.min.js"></script>
+		<script src="js/OrbitControls.js"></script>
+		<script src="js/ConvexGeometry.js"></script>
+		<script src="js/Detector.js"></script>
+		<script src="js/stats.min.js"></script>
+		
+		<style>
+			body, html {
+				padding: 0;
+				margin: 0;
+				background: #170000;
+			}
+		</style>
+
+		<script>
+			window.onload = function () {
+				var vectorParams = {
+					a: 17,
+					b: 15,
+					c: 1,
+					step: 0.2,
+					deltastep: 0.00017
+				};
+				/*var gui = new dat.GUI();
+				gui.add(vectorParams, "a", 1, 40, 0.1);
+				gui.add(vectorParams, "b", 0.1, 20, 0.1);
+				gui.add(vectorParams, "step", 0.001, 4, 0.0001);
+				gui.add(vectorParams, "deltastep", 0.00001, 0.0001, 0.000001);//*/
+			
+				var widthwin = window.innerWidth-20;
+				var heightwin = window.innerHeight-20;
+				
+				
+				var canvas = document.getElementById("rect");
+				canvas.setAttribute("width", widthwin);
+				canvas.setAttribute("height", heightwin);
+				
+				
+				var renderer = new THREE.WebGLRenderer({canvas: canvas});
+				renderer.setClearColor(0x170000);
+				
+				
+				var scene = new THREE.Scene();
+				
+				//Math.random()
+				var camera = new THREE.PerspectiveCamera(45, widthwin/heightwin, 0.1, 5000);
+				var x = Math.random() * 0.4*2*vectorParams.b - 0.4*vectorParams.b;
+				var y = Math.random() * 0.4*2*vectorParams.b - 0.4*vectorParams.b;
+				var z = 450;
+				camera.position.set( x , y , z );
+				/*/camera.position.set(0,0,450);//*/
+				//ShowCoordinates();				
+				
+				var light = new THREE.AmbientLight(0xffffff);
+				scene.add(light);
+				
+				
+				
+				
+				function ShowCoordinates(){
+					controls = new THREE.OrbitControls( camera, renderer.domElement );
+					controls.minDistance = 10;
+					controls.maxDistance = 1000;
+					controls.maxPolarAngle = Math.PI*20;
+					scene.add( new THREE.AmbientLight( 0x222222 ) );
+					camera.add( new THREE.PointLight( 0xffffff, 1 ) );
+					scene.add( new THREE.AxisHelper( 20000 ) );
+				}
+				
+				
+				function animate() {
+					var geometry = new THREE.Geometry;
+					var material = new THREE.LineBasicMaterial({color: 0xccce00});
+					
+					for (var t=2; t <= 1000; t+=vectorParams.step) {
+						var vec = new THREE.Vector3(
+							vectorParams.a*Math.cos(t), 
+							vectorParams.a*Math.sin(t), 
+							vectorParams.b*Math.sqrt(t)
+						);
+						geometry.vertices.push(vec);
+					}
+					var line = new THREE.Line(geometry, material);
+					scene.add(line);
+					vectorParams.step += vectorParams.deltastep;
+					
+					
+					
+					requestAnimationFrame( animate );
+					render();
+					
+					
+					scene.remove(line);
+					geometry.dispose();
+					material.dispose();
+					material.dispose();
+				}
+				function render() {
+					renderer.render( scene, camera );
+				}
+				animate();
+			}
+		</script>
+		
+		<canvas id="rect"></canvas>
+	</body>
+</html>

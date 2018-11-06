@@ -1,0 +1,180 @@
+<!--
+	Лабораторная работа №3
+	Беляков Игорь 8О-306Б
+-->
+<html>
+	<script src="js/DatGui.js"></script>
+	<script src="js/jquery-1.8.0.min.js"></script>
+	<script>
+		var CameraParams = {
+			S: 77,
+			dX: 0,
+			dY: 0
+		};
+		
+		var Shar = {			
+			R: 3,
+			t: 64
+		};
+		
+		var Points = [];
+		var Lines = [];
+		
+		var PointsRen = [];	// после поворота*/
+		
+		function ReRectangle() {
+			if ( Points.length % 4  ||  Lines.length % 2 ) {
+				alert("фигура задана неверно");
+				return;
+			}
+			
+			var canvas = document.getElementById("Ortograf");
+			var obCanvas = canvas.getContext("2d");
+			
+			canvas.width = parseInt($("#Ortograf").css("width"));
+			canvas.height = parseInt($("#Ortograf").css("height"));
+			
+			var cenX = canvas.width / 2;
+			var cenY = canvas.height / 2;
+			
+			// задаЮм точки и линии
+		
+			Points = [];
+			Lines = [];
+			
+			Points.push("-"+Shar.R, 0, 0, 1);
+			Points.push(Shar.R, 0, 0, 1);
+			for(var dO=1; dO<Shar.t; dO++){
+				for(var df=0; df<Shar.t; df++){
+					Points.push( 
+						Shar.R*Math.cos(Math.PI*dO/Shar.t),
+						Shar.R*Math.sin(Math.PI*dO/Shar.t)*Math.sin(2*Math.PI*df/Shar.t),
+						Shar.R*Math.sin(Math.PI*dO/Shar.t)*Math.cos(2*Math.PI*df/Shar.t),
+						1
+					);
+				}
+			}
+			
+			for(var dO=2; dO<Shar.t; dO++)
+				for(var df=0; df<Shar.t; df++)
+					Lines.push( 2+(dO-2)*Shar.t+df , 2+(dO-1)*Shar.t+df );
+					
+			for(var df=0; df<Shar.t; df++) {
+				Lines.push( 1 , 2+df );
+				Lines.push( 0 , 2+(Shar.t-2)*Shar.t+df );
+			}
+				
+			for(var dO=1; dO<Shar.t; dO++) {
+				for(var df=0; df<Shar.t-1; df++)
+					Lines.push( 2+(dO-1)*Shar.t+df , 2+(dO-1)*Shar.t+df+1 );
+				Lines.push( 2+(dO-1)*Shar.t , 2+(dO-1)*Shar.t+Shar.t-1 );
+			}
+			
+			for (var i=0; i<Points.length; i+=4) {	// матрица поворота			
+				PointsRen[i] = 
+					Points[i]*Math.cos(CameraParams.dX) + 
+					Points[i+1]*Math.sin(CameraParams.dX)*Math.sin(CameraParams.dY) - 
+					Points[i+2]*Math.sin(CameraParams.dX)*Math.cos(CameraParams.dY);
+				
+				PointsRen[i+1] = 
+					Points[i+1]*Math.cos(CameraParams.dY) + 
+					Points[i+2]*Math.sin(CameraParams.dY);
+				
+				PointsRen[i+2] = 
+					Points[i]*Math.sin(CameraParams.dX) - 
+					Points[i+1]*Math.sin(CameraParams.dY)*Math.cos(CameraParams.dX) + 
+					Points[i+2]*Math.cos(CameraParams.dY)*Math.cos(CameraParams.dX);
+				
+				PointsRen[i+3] = Points[i+3];
+			}
+			
+			obCanvas.beginPath();
+			obCanvas.lineWidth = 1;
+			obCanvas.strokeStyle = 'yellow';
+			for(var i=0; i<Lines.length; i+=2){
+				if( PointsRen[ Lines[i]*4+2 ] < 0  &&  PointsRen[ Lines[i+1]*4+2 ] < 0 )
+					continue;
+			
+				obCanvas.moveTo( cenX + PointsRen[ Lines[i]*4 ]*CameraParams.S , cenY + PointsRen[ Lines[i]*4+1 ]*CameraParams.S );
+				obCanvas.lineTo( cenX + PointsRen[ Lines[i+1]*4 ]*CameraParams.S , cenY + PointsRen[ Lines[i+1]*4+1 ]*CameraParams.S );
+			}
+			obCanvas.stroke();
+		}
+		
+		window.onload =  function(){ 			
+			var gui = new dat.GUI();
+			gui.add(Shar, "R", 0.1, 5, 0.01);
+			gui.add(Shar, "t", 32, 512, 1);
+			
+			ReRectangle();
+		};
+	</script>
+	<style>
+		body {
+			padding: 0;
+			margin: 0;
+		}
+		canvas {
+			width: 100%;
+			height: 100%;
+			cursor: move;
+		}
+	</style>
+	
+	<body>
+		<canvas id="Ortograf"></canvas>
+		
+		<script>
+			document.addEventListener("wheel", onWheel);
+			var val = 0;
+
+			function onWheel(e) {
+			  e = e || window.event;
+
+			  var delta = e.deltaY || e.detail || e.wheelDelta;
+			  delta /= Math.abs(delta);
+
+			  CameraParams.S  -=  delta * 11;
+			  if (CameraParams.S < 1)
+				CameraParams.S = 1;
+			  else if (CameraParams.S > 1000)
+				CameraParams.S = 1000;
+			  
+				ReRectangle();
+
+			  e.preventDefault ? e.preventDefault() : (e.returnValue = false);
+			}
+			
+			
+			var MouseDown = 0;
+			var oldMouseX;
+			var oldMouseY;
+			
+			document.onmousedown = function(e) {
+				e = e || window.event;
+				MouseDown = 1;
+				oldMouseX = e.clientX;
+				oldMouseY = e.clientY;
+			}
+
+			document.onmouseup = function(e){
+				e = e || window.event;
+				MouseDown = 0;
+			}
+
+			document.onmousemove = function(e){
+				e = e || window.event;
+				if(MouseDown==0)
+					return;
+					
+				CameraParams.dX -= (e.clientX - oldMouseX)/100;
+				CameraParams.dY += (e.clientY - oldMouseY)/100;
+				
+				oldMouseX = e.clientX;
+				oldMouseY = e.clientY;
+				
+				ReRectangle();
+			}
+		</script>
+	</body>
+</html>
